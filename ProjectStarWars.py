@@ -164,7 +164,7 @@ while running:
                 canShoot = 1
         elif rTrigger == -1.0:
             canShoot = 0
-    print(canShoot)
+
     screen.fill(BLACK)
     for ast in asteroids: ast.move()
     asteroids.sort(key=lambda obj: obj.z, reverse = True)

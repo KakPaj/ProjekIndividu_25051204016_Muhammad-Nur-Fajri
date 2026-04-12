@@ -168,15 +168,14 @@ while running:
             print("DUARR! Tertabrak Meteor!")
             count += 1
             print(count)
+            if isGamepad and len(joysticks) > 0:
+                joysticks[0].rumble(3, 5, 200)
 
     if count == 1:
         count += 1
         if count == 10:
             count = 0
             
-        if isGamepad and len(joysticks) > 0:
-            joysticks[0].rumble(3, 5, 400)
-
     XWing.draw()
     if isGamepad:
         if txtC == 0:

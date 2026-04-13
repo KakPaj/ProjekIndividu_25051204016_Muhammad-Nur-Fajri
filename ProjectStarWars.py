@@ -53,7 +53,7 @@ class bossLaser:
         self.y = worldY
         self.z = worldZ
         self.color = GREEN
-        self.zSpeed = 7
+        self.zSpeed = 10
         self.baseSize = 40
         self.isActive = True
         self.rect = pygame.Rect(0, 0, 0, 0)
@@ -224,9 +224,7 @@ class Player:
         self.x = x
         self.y = y
         self.rect = self.image.get_rect(center=(x,y))
-        self.speed = 5
         self.sound = pygame.mixer.Sound(sound)
-
         self.is_exploding = False
         self.explosion_timer = 0
         self.explosion_max = 30
@@ -282,7 +280,6 @@ class XWing(Player):
 
     def draw(self):
         if self.is_dead: return
-        
         if self.is_exploding:
             super().draw()
         else:
@@ -359,7 +356,6 @@ while running:
         
         for ast in asteroids: 
             ast.move()
-            # Efek suara saat lewat
             if not ast.has_roared and not ast.is_exploding and ast.z < 1000:
                 ast.roar()
                 ast.has_roared = True
@@ -398,8 +394,7 @@ while running:
             timer_countdown = 30 - elapsed_boss_time
             
             if timer_countdown <= 0 and StarDestroyer.hp > 0:
-                print("Goodbye!, May the Force be with You")
-                running = False
+                XWing.destroy()
 
             StarDestroyer.move()
             StarDestroyer.shoot(boss_lasers)
@@ -436,7 +431,7 @@ while running:
         win_text = win_font.render("RESISTANCE WIN", True, GREEN)
         screen.blit(win_text, (WIDTH//2 - win_text.get_width()//2, HEIGHT - 380))
     elif defeat:
-        lose_text = win_font.render("FIRST ORDER WINS", True, RED)
+        lose_text = win_font.render("FIRST ORDER WIN", True, RED)
         screen.blit(lose_text, (WIDTH//2 - lose_text.get_width()//2, HEIGHT - 380))
 
     XWing.draw()

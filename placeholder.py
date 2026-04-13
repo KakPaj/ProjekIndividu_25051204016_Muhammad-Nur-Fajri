@@ -17,6 +17,7 @@ count = 0
 
 BLACK = (0, 0, 0)
 GREEN = (0, 255, 0)
+RED = (255, 0, 0)
 FOV = 300
 CENTERX = WIDTH // 2
 CENTERY = HEIGHT // 2
@@ -25,60 +26,27 @@ cameraX = 0
 cameraY = 0
 cameraSpeed = 15
 
-class laser:
+# Setup Tembakan Laser
+last_shot_time = 0 
+cooldown = 200 
+wing_offset = 200
+laser_list = []
+
+class shiplaser:
     def __init__(self, worldX, worldY, worldZ):
         self.x = worldX
         self.y = worldY
         self.z = worldZ
-        self.color = GREEN
+        self.color = RED
         self.zSpeed = 30
         self.baseSize = 5
         self.rect = pygame.Rect(0, 0, 0, 0)
         self.isActive = True
 
     def move(self):
-        self.z += self.baseSize
-        if self.z > 5000:
+        self.z += self.zSpeed
+        if self.z > 4000:
             self.isActive = False
-
-    def summon(self, surface):
-        if self.z <= 0: return
-        scale = FOV / self.z
-        relX = self.x - cameraX
-        relY = self.y - cameraY + 25
-        screenX = CENTERX + (relX * scale)
-        screenY = CENTERY + (relY * scale)
-        summonSize = self.baseSize * scale
-        if summonSize <= 0: return
-
-        self.rect = pygame.Rect(0, 0, summonSize, summonSize)
-        self.rect.center = (int(screenX), int(screenY))
-        pygame.draw.rect(surface, self.color, self.rect)
-
-
-class obstacle:
-    def __init__(self, image, sound):
-        self.image = pygame.image.load(image).convert_alpha()
-        self.z = random.randint(7000, 10000)
-        self.width = self.image.get_width()
-        self.height = self.image.get_height()
-        self.sound = pygame.mixer.Sound(sound)
-        self.respawn()
-        
-    def respawn(self):
-        if self.z <= 10:
-            self.z = random.randint(4000,10000)
-        self.x = cameraX + random.randint(-1500, 1500)
-        self.y = cameraY + random.randint(-800, 800)
-        self.zSpeed = 20
-    
-    def move(self):
-        self.z -= self.zSpeed
-        if self.z <= 10:
-            self.respawn()
-
-    def rect(self):
-        return self.rect
 
     def summon(self, surface):
         if self.z <= 0: return
@@ -86,19 +54,89 @@ class obstacle:
         relX = self.x - cameraX
         relY = self.y - cameraY
         screenX = CENTERX + (relX * scale)
-        screenY = CENTERY + (relY * scale)
-        moveWidth = self.width * scale
-        moveHeight = self.height * scale
-        if moveWidth > WIDTH or moveWidth <= 0: return
+        screenY = CENTERY + (relY * scale) + 50
+        summonSize = self.baseSize * scale
+        if summonSize <= 0: return
 
-        moveImage = pygame.transform.scale(self.image, (moveHeight, moveWidth))
-        self.rect = moveImage.get_rect(center=(screenX, screenY))
-        surface.blit(moveImage, self.rect)
+        self.rect = pygame.Rect(0, 0, summonSize, summonSize)
+        self.rect.center = (int(screenX), int(screenY))
+        pygame.draw.rect(surface, self.color, self.rect)
+
+    def rect(self):
+        return self.rect
+
+class obstacle:
+    def __init__(self, image, sound):
+        self.image = pygame.image.load(image).convert_alpha()
+        self.z = random.randint(3000, 5000)
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+        self.sound = pygame.mixer.Sound(sound)
+        
+        # Variabel untuk animasi ledakan
+        self.is_exploding = False
+        self.explosion_timer = 0
+        self.explosion_max = 15 # Durasi ledakan (dalam frame)
+        
+        self.respawn()
+        
+    def respawn(self):
+        self.is_exploding = False
+        if self.z <= 10:
+            self.z = random.randint(4000,10000)
+        self.x = cameraX + random.randint(-1500, 1500)
+        self.y = cameraY + random.randint(-800, 800)
+        self.zSpeed = 20
+    
+    def move(self):
+        # Jika sedang meledak, rintangan berhenti bergerak maju
+        if not self.is_exploding:
+            self.z -= self.zSpeed
+            if self.z <= 10:
+                self.respawn()
+
+    def rect(self):
+        return self.rect
+
+    def destroy(self):
+        # Memicu ledakan jika belum meledak
+        if not self.is_exploding:
+            self.is_exploding = True
+            self.explosion_timer = self.explosion_max
+            self.roar() # Mainkan suara saat meledak
+
+    def summon(self, surface):
+        if self.z <= 0: return
+        scale = FOV / self.z
+        relX = self.x - cameraX
+        relY = self.y - cameraY
+        screenX = int(CENTERX + (relX * scale))
+        screenY = int(CENTERY + (relY * scale))
+        
+        if self.is_exploding:
+            progress = 1 - (self.explosion_timer / self.explosion_max)
+            radius = int(self.width * scale * progress * 2)
+            
+            if radius > 0:
+                pygame.draw.circle(surface, (255, 165, 0), (screenX, screenY), radius)
+                pygame.draw.circle(surface, (255, 0, 0), (screenX, screenY), int(radius * 0.7))
+            
+            self.explosion_timer -= 1
+            if self.explosion_timer <= 0:
+                self.respawn()
+        else:
+            moveWidth = self.width * scale
+            moveHeight = self.height * scale
+            if moveWidth > WIDTH or moveWidth <= 0: return
+
+            moveImage = pygame.transform.scale(self.image, (int(moveWidth), int(moveHeight)))
+            self.rect = moveImage.get_rect(center=(screenX, screenY))
+            surface.blit(moveImage, self.rect)
     
     def roar(self):
-        if self.z < 200:
-            self.sound.play()
-            self.sound.set_volume(0.7)
+        self.sound.play()
+        self.sound.set_volume(0.7)
+        
 
 class Player:
     def __init__(self, x, y, image, sound, angle):
@@ -199,18 +237,63 @@ while running:
         if rTrigger > 0.5:
             if canShoot == 0:
                 XWing.shootG()
-                
+                if current_time - last_shot_time > cooldown:
+                    laser_start_z = 100 
+                    left_screen_x = XWing.rect.centerx - wing_offset
+                    left_world_x = ((left_screen_x - CENTERX) * laser_start_z / FOV) + cameraX
+                    
+                    right_screen_x = XWing.rect.centerx + wing_offset
+                    right_world_x = ((right_screen_x - CENTERX) * laser_start_z / FOV) + cameraX
+                    
+                    world_y = ((XWing.rect.centery - CENTERY) * laser_start_z / FOV) + cameraY
+                    
+                    laser_list.append(shiplaser(left_world_x, world_y, laser_start_z))
+                    laser_list.append(shiplaser(right_world_x, world_y, laser_start_z))
+                    last_shot_time = current_time
+
                 canShoot = 1
         elif rTrigger <= 0:
             canShoot = 0
 
-    
-    for ast in asteroids: ast.move()
-    asteroids.sort(key=lambda obj: obj.z, reverse = True)
+    # if keys[pygame.K_SPACE]:
+    #     XWing.shootG()
+    #     if current_time - last_shot_time > cooldown:
+    #         laser_start_z = 100 
+    #         left_screen_x = XWing.rect.centerx - wing_offset
+    #         left_world_x = ((left_screen_x - CENTERX) * laser_start_z / FOV) + cameraX
+                    
+    #         right_screen_x = XWing.rect.centerx + wing_offset
+    #         right_world_x = ((right_screen_x - CENTERX) * laser_start_z / FOV) + cameraX
+                    
+    #         world_y = ((XWing.rect.centery - CENTERY) * laser_start_z / FOV) + cameraY
+                    
+    #         laser_list.append(shiplaser(left_world_x, world_y, laser_start_z))
+    #         laser_list.append(shiplaser(right_world_x, world_y, laser_start_z))
+    #         last_shot_time = current_time
+
+    laser_list = [laser for laser in laser_list if laser.isActive]
 
     for ast in asteroids:
-        ast.summon(screen)
-        ast.roar()
+        ast.move()
+        if not ast.is_exploding and ast.z < 3000: 
+            for lsr in laser_list:
+                if lsr.isActive and lsr.rect.colliderect(ast.rect):
+                    dist_x = lsr.x - ast.x
+                    dist_y = lsr.y - ast.y
+                    jarak = (dist_x**2 + dist_y**2)**0.5
+                    if jarak < 300: 
+                        ast.destroy()
+                        lsr.isActive = False
+                        break
+
+    asteroids.sort(key=lambda obj: obj.z, reverse = True)
+    for laser in laser_list: laser.move()
+
+    allObjects = asteroids + laser_list
+    allObjects.sort(key=lambda obj: obj.z, reverse=True)
+
+    for obj in allObjects:
+        obj.summon(screen)
 
     if ast.z < 100 and XWing.rect.colliderect(ast.rect):
         if isGamepad and len(joysticks) > 0:

@@ -18,7 +18,6 @@ pygame.mixer.music.play(-1, 0, 0)
 isGamepad = False
 txtC = 0
 kills = 0
-count = 0
 isBoss = False
 boss_spawned = False
 boss_start_time = 0
@@ -343,7 +342,7 @@ while running:
                 laser_list.append(shiplaser(right_world_x, world_y, laser_start_z))
                 last_shot_time = current_time
 
-    if kills >= 5 and not boss_spawned:
+    if kills >= 10 and not boss_spawned:
         isBoss = True
         boss_spawned = True
         boss_start_time = pygame.time.get_ticks()

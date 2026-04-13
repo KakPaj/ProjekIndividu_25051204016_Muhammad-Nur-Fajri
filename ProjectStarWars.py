@@ -12,7 +12,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("STAR WARS: Battlefield")
 clock = pygame.time.Clock()
 
-pygame.mixer.music.load("ASsets/Sounds/Resistance.mp3")
+pygame.mixer.music.load("Assets/Sounds/Resistance.mp3")
 pygame.mixer.music.play(-1, 0, 0)
 
 isGamepad = False

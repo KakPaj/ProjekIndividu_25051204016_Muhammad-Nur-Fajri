@@ -53,7 +53,7 @@ class bossLaser:
         self.z = worldZ
         self.color = GREEN
         self.zSpeed = 10
-        self.baseSize = 40
+        self.baseSize = 80
         self.isActive = True
         self.rect = pygame.Rect(0, 0, 0, 0)
 
